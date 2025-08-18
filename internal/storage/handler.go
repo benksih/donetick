@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -150,18 +151,19 @@ func (h *Handler) ChoreUploadHandler(c *gin.Context) {
 		mediaRecord,
 		currentUser,
 	); err != nil {
-		if err == errorx.ErrNotEnoughSpace {
+		if errors.Is(err, errorx.ErrNotEnoughSpace) {
 			log.Error("user has no enough space", "error", err)
-			c.JSON(http.StatusInsufficientStorage, gin.H{"error": "no enough space"})
+			c.JSON(http.StatusInsufficientStorage, gin.H{"error": err.(*errorx.LocalizedError).Localize(c)})
 			return
-		} else if err == errorx.ErrNotAPlusMember {
-			log.Error("user is not a plus member", "error", err)
-			c.JSON(http.StatusForbidden, gin.H{"error": "user is not a plus member"})
-			return
-		} else {
-			log.Error("failed to save file record to db", "error", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file record"})
 		}
+		if errors.Is(err, errorx.ErrNotAPlusMember) {
+			log.Error("user is not a plus member", "error", err)
+			c.JSON(http.StatusForbidden, gin.H{"error": err.(*errorx.LocalizedError).Localize(c)})
+			return
+		}
+
+		log.Error("failed to save file record to db", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file record"})
 		return
 	}
 	err = h.storage.Save(context.Background(), path, src)

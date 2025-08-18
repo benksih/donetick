@@ -1,0 +1,7 @@
+{
+  "not_enough_storage_space": "存储空间不足",
+  "not_a_plus_member": "不是高级会员：无法使用高级功能",
+  "welcome_email_subject": "欢迎来到Donetick！请验证您的邮箱",
+  "reset_password_email_subject": "Donetick！重置密码",
+  "file_size_too_large": "文件太大"
+}

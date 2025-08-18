@@ -46,6 +46,9 @@ import (
 	uRepo "donetick.com/core/internal/user/repo"
 	"donetick.com/core/internal/utils"
 	"donetick.com/core/logging"
+	"donetick.com/core/internal/localization"
+	"donetick.com/core/internal/middleware"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
 func main() {
@@ -63,6 +66,7 @@ func main() {
 		fx.Supply(cfg),
 		fx.Supply(logging.DefaultLogger().Desugar()),
 
+		fx.Provide(localization.NewBundle),
 		// fx.Provide(config.NewConfig),
 		fx.Provide(auth.NewAuthMiddleware),
 		fx.Provide(auth.NewIdentityProvider),
@@ -160,7 +164,7 @@ func main() {
 
 }
 
-func newServer(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB, notifier *notifier.Scheduler, eventProducer *events.EventsProducer, mfaCleanup *mfa.CleanupService, rts *realtime.RealTimeService) *gin.Engine {
+func newServer(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB, notifier *notifier.Scheduler, eventProducer *events.EventsProducer, mfaCleanup *mfa.CleanupService, rts *realtime.RealTimeService, bundle *i18n.Bundle) *gin.Engine {
 	// Set Gin mode based on logging configuration
 	if cfg.Logging.Development || strings.ToLower(cfg.Logging.Level) == "debug" {
 		gin.SetMode(gin.DebugMode)
@@ -171,6 +175,7 @@ func newServer(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB, notifier *notif
 	// log when http request is made:
 
 	r := gin.New()
+	r.Use(middleware.Localizer(bundle))
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
 		Handler:      r,
